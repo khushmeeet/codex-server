@@ -1,13 +1,24 @@
 from fastapi import FastAPI
 import uvicorn
 from config import Settings
-from apps.default.routes import r
+from apps.web.routes import web
+from mongoengine import connect, disconnect
+
 
 settings = Settings()
-
 app = FastAPI()
+app.include_router(web, prefix='/web')
 
-app.include_router(r, prefix='/d')
+
+@app.on_event("startup")
+async def startup_db_client():
+    connect(host=settings.mongodb_uri)
+
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    disconnect()
+
 
 if __name__ == '__main__':
     uvicorn.run(
